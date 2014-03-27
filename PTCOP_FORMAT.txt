@@ -1,0 +1,120 @@
+PTCOP FILE FORMAT
+
+Generally speaking, the format seems to follow the pattern of
+Block Name [0x8]
+Block Size [0x4]
+- Block data
+
+Blocks marked with <!> should never be missing, 
+but all other blocks are optional
+It is currently unknown if the ordering of the blocks matters,
+but blocks here are listed according to order of appearance in sample files.
+
+//***********************************************************
+
+0x00 : File header "PTCOLLAGE-071119"
+0x10 : Unknown int (0x00000392)
+
+"MasterV5" block <!>
+0x0[0x2] Unknown data
+0x2[0x1] Beat
+0x3[0x2] Unknown data
+0x5[0x2] Beat Tempo
+0x7[0x4] "Repeat" location (meas * beat * 0x1E0?)
+0xB[0x4] "Last" location
+
+"Event V5" block
+-This block contains both note signal events and effect events
+-If there are no events, field contains a single null int
+-If there are events, block data contains the following:
+0x0[0x4] number of events
+0x4[0x?] event data
+
+Events have the following format
+	Position indicator: a variable-length number 
+
+	98  02 is
+	(02-01)x80 +98
+
+	80 8E 02 is
+	(((02-01)*80)+8e-01)*80+80
+
+	0x6000 = 80 C0 01
+
+	Unit ID: A char indicating which unit this event applies to
+
+	Event ID: a byte indicating which type of event it is
+		0x1 - Play Instrument (duration)
+		0x2 - Note pitch change(new note)
+		0x3 - Pan(volume) (new pan)
+		0x4 - Velocity
+		0x5 - Volume (new volume)
+		0x6 - Key Porta (length)
+		0x7 - 
+		0x8 - 
+		0x9 - 
+		0xA - 
+		0xB - 
+		0xC - Voice No (new voice)
+		0xD - Group No (new group)
+		0xE - Key Correct (key correct value)
+		0xF - Pan(Time) (new pan?)
+	
+	Event Value: A variable-length number of the same format used
+	for the position indicator that specifies the value being
+	changed by the event. for example, the event value
+	of a Volume event is the new volume of the unit.
+
+"textNAME" block <!>
+ASCII string containing the name of the song (not null-terminated)
+
+"textCOMM" block
+ASCII string containing song comments (not null-terminated)
+
+"effeDELA" block
+Unknown data
+
+"effeOVER" block
+Unknown data
+
+"matePCM\20" block
+0x00[0x3] Unknown data (padding?)
+0x03[0x1] Basic Key field
+0x04[0x4] Voice flags
+	0x01 - Loop
+	0x02 - Smooth
+	0x04 - Beat Fit
+0x08[0x2] number of channels (mono or stereo)
+0x0A[0x2] bitrate (8, 16 or 32 bits)
+0x0C[0x4] sample rate (Hz)
+0x10[0x4] key correct (32Bit float?)
+0x14[0x4] number of samples
+0x18[0x?] sample frames - size of (bitrate/8 * nSample)
+
+"matePTV\20"
+0x00[0x0C] Unknown data
+0x0C[0x08] "PTVOICE-"
+0x14[0x0A] Unknown data (doesn't match .ptvoice file)
+0x18[0x1A] Unknown data (matches .ptvoice file)
+	--note: .ptvoice file is 2 bytes larger (?)
+
+"matePTN\20"
+Unknown data
+
+"mateOGGV"
+Unknown and really damn big data even for a smidgey little sample
+
+"assiWOIC" block - comes after every "mateXXXX" block
+0x0[0x04] Voice number
+0x4[0x10] Voice name. If less than 0x10 in len, will be null-terminated
+
+"num UNIT" block <!>
+-A single integer denoting the number of units in use by this song
+
+"assiUNIT" block
+-one for each unit
+0x0[0x04] Unit number
+0x4[0x10] Unit name. If less than 0x10 in len, will be null-terminated
+
+"pxtoneND" block <!>
+-zero size, denotes end of file
